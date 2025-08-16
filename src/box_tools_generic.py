@@ -1,6 +1,6 @@
 from typing import cast
 
-from box_ai_agents_toolkit import BoxClient, get_ccg_client
+from box_ai_agents_toolkit import BoxClient, authorize_app
 from mcp.server.fastmcp import Context
 
 from server_context import BoxContext
@@ -35,7 +35,7 @@ async def box_authorize_app_tool() -> str:
     return:
         str: Message
     """
-    result = get_ccg_client()
+    result = authorize_app()
     if result:
         return "Box application authorized successfully"
     else:
