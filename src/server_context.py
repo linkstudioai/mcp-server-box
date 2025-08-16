@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import AsyncIterator
 
-from box_ai_agents_toolkit import BoxClient, get_oauth_client
+from box_ai_agents_toolkit import BoxClient, get_ccg_client
 from mcp.server.fastmcp import FastMCP
 
 
@@ -15,7 +15,7 @@ class BoxContext:
 async def box_lifespan(server: FastMCP) -> AsyncIterator[BoxContext]:
     """Manage Box client lifecycle with OAuth handling"""
     try:
-        client = get_oauth_client()
+        client = get_ccg_client()
         yield BoxContext(client=client)
     finally:
         # Cleanup (if needed)
