@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from server_context import BoxContext, box_lifespan
+from server_context import BoxContext, box_lifespan_oauth
 
 
 class TestBoxContext:
@@ -69,7 +69,7 @@ class TestBoxLifespan:
         mock_get_oauth_client.return_value = mock_client
         mock_server = MagicMock()
 
-        async with box_lifespan(mock_server) as context:
+        async with box_lifespan_oauth(mock_server) as context:
             assert isinstance(context, BoxContext)
             assert context.client == mock_client
 
@@ -87,7 +87,7 @@ class TestBoxLifespan:
         mock_server = MagicMock()
 
         with pytest.raises(Exception) as exc_info:
-            async with box_lifespan(mock_server) as context:  # noqa: F841
+            async with box_lifespan_oauth(mock_server) as context:  # noqa: F841
                 pass  # This shouldn't be reached
 
         assert str(exc_info.value) == "OAuth client initialization failed"
@@ -102,7 +102,7 @@ class TestBoxLifespan:
         mock_server = MagicMock()
 
         with pytest.raises(ValueError) as exc_info:
-            async with box_lifespan(mock_server) as context:
+            async with box_lifespan_oauth(mock_server) as context:
                 assert context.client == mock_client
                 raise ValueError("Test exception during yield")
 
@@ -118,7 +118,7 @@ class TestBoxLifespan:
         mock_server = MagicMock()
 
         # Mock the cleanup section by patching the entire function
-        original_box_lifespan = box_lifespan  # noqa: F841
+        original_box_lifespan = box_lifespan_oauth  # noqa: F841
 
         cleanup_called = []
 
@@ -145,7 +145,7 @@ class TestBoxLifespan:
         mock_get_oauth_client.return_value = None
         mock_server = MagicMock()
 
-        async with box_lifespan(mock_server) as context:
+        async with box_lifespan_oauth(mock_server) as context:
             assert isinstance(context, BoxContext)
             assert context.client is None
 
@@ -161,11 +161,11 @@ class TestBoxLifespan:
         mock_server = MagicMock()
 
         # First call
-        async with box_lifespan(mock_server) as context1:
+        async with box_lifespan_oauth(mock_server) as context1:
             assert context1.client == mock_client1
 
         # Second call
-        async with box_lifespan(mock_server) as context2:
+        async with box_lifespan_oauth(mock_server) as context2:
             assert context2.client == mock_client2
 
         assert mock_get_oauth_client.call_count == 2
@@ -180,8 +180,8 @@ class TestBoxLifespan:
         mock_server2 = MagicMock()
 
         # Test that each context gets its own BoxContext instance
-        async with box_lifespan(mock_server1) as context1:
-            async with box_lifespan(mock_server2) as context2:
+        async with box_lifespan_oauth(mock_server1) as context1:
+            async with box_lifespan_oauth(mock_server2) as context2:
                 assert isinstance(context1, BoxContext)
                 assert isinstance(context2, BoxContext)
                 assert context1 is not context2  # Different instances
@@ -203,10 +203,10 @@ class TestBoxLifespan:
         mock_server2 = MagicMock()
         mock_server2.name = "Server2"
 
-        async with box_lifespan(mock_server1) as context1:
+        async with box_lifespan_oauth(mock_server1) as context1:
             client1 = context1.client
 
-        async with box_lifespan(mock_server2) as context2:
+        async with box_lifespan_oauth(mock_server2) as context2:
             client2 = context2.client
 
         # Both should have the same client since server parameter is not used
@@ -238,7 +238,7 @@ class TestBoxContextIntegration:
 
         mock_server = MagicMock()
 
-        async with box_lifespan(mock_server) as context:
+        async with box_lifespan_oauth(mock_server) as context:
             # Test that we can use the context as expected
             assert isinstance(context, BoxContext)
             assert context.client == mock_client
@@ -256,7 +256,7 @@ class TestBoxContextIntegration:
         mock_get_oauth_client.return_value = mock_client
         mock_server = MagicMock()
 
-        async with box_lifespan(mock_server) as context:
+        async with box_lifespan_oauth(mock_server) as context:
             original_client = context.client
 
             # Modify the context (though this wouldn't be typical usage)

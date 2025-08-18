@@ -54,7 +54,7 @@ from box_tools_metadata import (
     box_metadata_update_instance_on_file_tool,
 )
 from box_tools_search import box_search_folder_by_name_tool, box_search_tool
-from server_context import box_lifespan
+from server_context import box_lifespan_ccg, box_lifespan_oauth
 
 # Disable all logging
 logging.basicConfig(level=logging.CRITICAL)
@@ -71,18 +71,24 @@ def get_mcp_server(
     transport: str = "stdio",
     host: str = "127.0.0.1",
     port: int = 8000,
+    auth: str = "oauth",
 ) -> FastMCP:
     # Initialize FastMCP server
 
+    if auth == "ccg":
+        lifespan = box_lifespan_ccg
+    else:
+        lifespan = box_lifespan_oauth
+
     if transport == "stdio":
-        return FastMCP(server_name, lifespan=box_lifespan)
+        return FastMCP(server_name, lifespan=lifespan)
     else:
         return FastMCP(
             server_name,
             stateless_http=True,
             host=host,
             port=port,
-            lifespan=box_lifespan,
+            lifespan=lifespan,
         )
 
 
@@ -158,6 +164,13 @@ if __name__ == "__main__":
         help="Port for SSE/HTTP transport (default: 8000)",
     )
 
+    parser.add_argument(
+        "--auth",
+        choices=["oauth", "ccg"],
+        default="oauth",
+        help="Authentication type (default: oauth)",
+    )
+
     args = parser.parse_args()
 
     # Initialize FastMCP server
@@ -166,6 +179,7 @@ if __name__ == "__main__":
         transport=args.transport,
         host=args.host,
         port=args.port,
+        auth=args.auth,
     )
     register_tools(mcp)
 
@@ -178,6 +192,7 @@ if __name__ == "__main__":
                 "transport": args.transport,
                 "host": "N/A",
                 "port": "N/A",
+                "auth": args.auth,
             }
 
         return {
@@ -185,6 +200,7 @@ if __name__ == "__main__":
             "transport": args.transport,
             "host": args.host,
             "port": args.port,
+            "auth": args.auth,
         }
 
     if args.transport == "sse":
