@@ -394,9 +394,19 @@ List all Doc Gen jobs that used a specific template.
 
 4. Create a `.env` file in the root directory and add your Box API credentials:
 
+For OAuth
     ```.env
     BOX_CLIENT_ID=your_client_id
     BOX_CLIENT_SECRET=your_client_secret
+    BOX_REDIRECT_URL = http://localhost:8000/callback
+    ```
+
+For CCG
+    ```.env
+    BOX_CLIENT_ID=your_client_id
+    BOX_CLIENT_SECRET=your_client_secret
+    BOX_SUBJECT_TYPE = user # or enterprise
+    BOX_SUBJECT_ID = your user id or enterprise id
     ```
 
 ## Usage
@@ -472,91 +482,6 @@ uv --directory /path/to/mcp-server-box run src/mcp_server_box.py
 
 6. Save and close the mcp.json file, and restart if necessary.
 
-
-## Running Tests
-
-The project includes comprehensive test suites for both unit tests and integration tests to verify Box API functionality.
-
-### Test Structure
-
-The project includes two types of tests:
-
-1. **Unit Tests** - Mock-based tests that don't require Box API access:
-   - `test_box_tools_ai.py` - Tests for AI functionality tools
-   - `test_box_tools_generic.py` - Tests for generic Box operations
-   - `test_box_tools_metadata.py` - Tests for metadata operations
-   - `test_box_tools_search.py` - Tests for search functionality
-   - `test_server_context.py` - Tests for server context management
-   - `test_mcp_server_box.py` - Tests for MCP server functionality
-
-2. **Integration Tests** - Tests that require actual Box API access (with `_orig` suffix):
-   - `test_box_tools_files_orig.py`
-   - `test_box_tools_metadata_orig.py`
-   - `test_box_tools_search_orig.py`
-
-### Running Unit Tests
-
-Unit tests use mocks and don't require Box API credentials:
-
-```bash
-# Run all unit tests
-pytest tests/test_box_tools_*.py tests/test_server_context.py tests/test_mcp_server_box.py
-
-# Run specific unit test files
-pytest tests/test_box_tools_ai.py
-pytest tests/test_box_tools_generic.py
-pytest tests/test_box_tools_metadata.py
-
-# Run with coverage
-pytest --cov=src tests/
-```
-
-### Running Integration Tests
-
-Integration tests require Box API credentials and valid file/folder IDs in your Box account:
-
-1. **Set up Box API credentials** in your `.env` file
-2. **Update File and Folder IDs**: 
-   - Each integration test file (ending with `_orig.py`) uses hardcoded IDs for Box files and folders
-   - Replace these IDs with valid IDs from your Box account
-3. **File ID References**:
-   - For example, in `tests/test_box_tools_files_orig.py`, replace `"1728677291168"` with a valid file ID
-
-```bash
-# Run integration tests
-pytest tests/test_*_orig.py
-
-# Run specific integration test
-pytest tests/test_box_tools_files_orig.py
-
-# Run all tests (unit + integration)
-pytest
-
-# Run with detailed output
-pytest -v
-
-# Run with print statements
-pytest -v -s
-```
-
-### Test Dependencies
-
-The test suite uses:
-- `pytest` - Test framework
-- `pytest-asyncio` - For async test support  
-- `pytest-cov` - For coverage reporting
-- `unittest.mock` - For mocking external dependencies
-
-
-## Troubleshooting
-
-If you receive the error `Error: spawn uv ENOENT` on MacOS when running the MCP server with Claude Desktop, you may:
-- Remove uv and reinstall it with Homebrew: `brew install uv`
-- Or provide the full path to the uv executable in your configuration:
-  
-  ```sh
-  /Users/shurrey/.local/bin/uv --directory /Users/shurrey/local/mcp-server-box run src/mcp_server_box.py
-  ```
 
 > [!NOTE]
 > Make sure your Box API credentials in `.env` are correctly set.
