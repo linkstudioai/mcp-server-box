@@ -34,15 +34,15 @@ wheels = [
 
 [[package]]
 name = "box-ai-agents-toolkit"
-version = "0.0.44"
+version = "0.0.47"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "box-sdk-gen" },
     { name = "python-dotenv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e5/f3/bec93b6956b61f186c8403e12961bde2fc659911c48155491eb212e8600d/box_ai_agents_toolkit-0.0.44.tar.gz", hash = "sha256:e46d0141020789b3b6320e11664accb8fb24523937891cea089b6c276c5edc17", size = 322558 }
+sdist = { url = "https://files.pythonhosted.org/packages/bb/5a/3fcc00da8b23d4d5017a9460fac42abc416f1adc3fb82eea05b30fe3c234/box_ai_agents_toolkit-0.0.47.tar.gz", hash = "sha256:91fd89b2e9586559b9886e765fccaeace3ca0efe2761ef7460ea3d362857c0fc", size = 8022901 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/dd/1e/a82b7bf9b77f69e2002f0dd2d16f29b3b665d84fbcb9970bff5ed37c5fa2/box_ai_agents_toolkit-0.0.44-py3-none-any.whl", hash = "sha256:c161f9d875b15a71662cde5630de874deb45f0a46bd710ed77674a2a03e67b09", size = 23592 },
+    { url = "https://files.pythonhosted.org/packages/57/ce/1d35831cace2e752b55626e3a4e354e25d61321c75c1396126f361a4e4c6/box_ai_agents_toolkit-0.0.47-py3-none-any.whl", hash = "sha256:196fa7a3d811950d7c6e98b5449bbe92bf625c8a2de1b15170708dec7ce4ea24", size = 24618 },
 ]
 
 [[package]]
@@ -305,7 +305,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "box-ai-agents-toolkit", specifier = ">=0.0.44" },
+    { name = "box-ai-agents-toolkit", specifier = ">=0.0.47" },
     { name = "fastapi", specifier = ">=0.115.14" },
     { name = "mcp", extras = ["cli"], specifier = ">=1.10.1" },
     { name = "python-dotenv", specifier = ">=1.1.1" },

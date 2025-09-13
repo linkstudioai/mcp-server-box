@@ -1,5 +1,6 @@
 import base64
 import os
+from typing import Any
 
 from box_ai_agents_toolkit import (
     DocumentFiles,
@@ -13,7 +14,7 @@ from mcp.server.fastmcp import Context
 from box_tools_generic import get_box_client
 
 
-async def box_read_tool(ctx: Context, file_id: str) -> str:
+async def box_read_tool(ctx: Context, file_id: str) -> dict[str, Any]:
     """
     Read the text content of a file in Box.
 
@@ -27,7 +28,6 @@ async def box_read_tool(ctx: Context, file_id: str) -> str:
         file_id = str(file_id)
 
     box_client = get_box_client(ctx)
-    # TODO:return file object or file mini with id, name, type, description
     response = box_file_text_extract(box_client, file_id)
     return response
 
