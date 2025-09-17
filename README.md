@@ -27,71 +27,6 @@ Search for files in Box.
   - `ancestor_folder_ids` (List[str], optional): List of folder IDs in which to search.
 - **Returns:** The search results as a newline‑separated list of file names and IDs.
 
-### `box_read_tool`
-Read the text content of a Box file.
-
-**Parameters:**
-- `file_id` (str): ID of the file to read
-
-**Returns:** File content
-
-### `box_ask_ai_tool`
-Ask Box AI about a file.
-
-**Parameters:**
-- `file_id` (str): ID of the file
-- `prompt` (str): Question for the AI
-
-**Returns:** AI response
-
-### `box_hubs_ask_ai_tool`
-Ask Box AI about a hub. There is currently no way via API to discover a hub ID, so you must know the ID to use this tool. We will fix this in the future.
-
-**Parameters:**
-- `hubs_id` (str): ID of the hub
-- `prompt` (str): Question for the AI
-
-**Returns:** AI response
-
-### `box_search_folder_by_name`
-Locate a folder by name.
-
-**Parameters:**
-- `folder_name` (str): Name of the folder
-
-**Returns:** Folder ID
-
-### `box_ai_extract_data`
-Extract data from a file using AI.
-
-**Parameters:**
-- `file_id` (str): ID of the file
-- `fields` (str): Fields to extract
-
-**Returns:** Extracted data in JSON format
-
-### `box_list_folder_content_by_folder_id`
-List folder contents.
-
-**Parameters:**
-- `folder_id` (str): ID of the folder
-- `is_recursive` (bool): Whether to list recursively
-
-**Returns:** Folder content in JSON format with id, name, type, and description
-
-### `box_manage_folder_tool`
-Create, update, or delete folders in Box.
-
-**Parameters:**
-- `action` (str): Action to perform: "create", "delete", or "update"
-- `folder_id` (str, optional): ID of the folder (required for delete/update)
-- `name` (str, optional): Folder name (required for create, optional for update)
-- `parent_id` (str, optional): Parent folder ID (required for create, optional for update)
-- `description` (str, optional): Folder description (optional for update)
-- `recursive` (bool, optional): Whether to delete recursively (optional for delete)
-
-**Returns:** Status message with folder details
-
 #### `box_search_folder_by_name_tool`
 Locate a folder in Box by its name.
 - **Parameters:**
@@ -153,6 +88,7 @@ Extract structured data from files using AI with enhanced processing and specifi
 - **Parameters:**
   - `file_ids` (List[str]): The IDs of the files to read.
   - `fields` (List[dict]): The fields to extract from the files.
+  - `ai_agent_id` (str, optional): The ID of the AI agent to use.
 - **Returns:** Enhanced extracted structured data in JSON format.
 
 #### `box_ai_extract_structured_enhanced_using_template_tool`
@@ -160,7 +96,32 @@ Extract structured data from files using AI with enhanced processing and a templ
 - **Parameters:**
   - `file_ids` (List[str]): The IDs of the files to read.
   - `template_key` (str): The ID of the template to use for extraction.
+  - `ai_agent_id` (str, optional): The ID of the AI agent to use.
 - **Returns:** Enhanced extracted structured data in JSON format.
+
+### Box User Tools
+
+#### `box_users_list_tool`
+List all users in the Box enterprise.
+- **Returns:** List of user dictionaries.
+
+#### `box_users_locate_by_email_tool`
+Find a user by their email address.
+- **Parameters:**
+  - `email` (str): The user's email address.
+- **Returns:** User dictionary if found.
+
+#### `box_users_locate_by_name_tool`
+Find a user by their name.
+- **Parameters:**
+  - `name` (str): The user's name.
+- **Returns:** User dictionary if found.
+
+#### `box_users_search_by_name_or_email_tool`
+Search for users by name or email.
+- **Parameters:**
+  - `query` (str): Name or email to search for.
+- **Returns:** List of user dictionaries matching the query.
 
 ### Box File Tools
 
@@ -392,17 +353,17 @@ List all Doc Gen jobs that used a specific template.
     uv lock
     ```
 
-4. Create a `.env` file in the root directory and add your Box API credentials:
+4. Create a [.env](http://_vscodecontentref_/0) file in the root directory and add your Box API credentials:
 
 For OAuth
-    ```.env
+    ```
     BOX_CLIENT_ID=your_client_id
     BOX_CLIENT_SECRET=your_client_secret
     BOX_REDIRECT_URL = http://localhost:8000/callback
     ```
 
 For CCG
-    ```.env
+    ```
     BOX_CLIENT_ID=your_client_id
     BOX_CLIENT_SECRET=your_client_secret
     BOX_SUBJECT_TYPE = user # or enterprise

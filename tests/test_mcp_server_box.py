@@ -4,7 +4,6 @@ from unittest.mock import Mock, patch
 import pytest
 from mcp.server.fastmcp import FastMCP
 
-from mcp_server_box import get_mcp_server
 
 
 @pytest.fixture
