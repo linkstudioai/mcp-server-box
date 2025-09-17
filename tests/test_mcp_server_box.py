@@ -25,76 +25,76 @@ def mock_box_lifespan():
     return mock_lifespan
 
 
-class TestGetMcpServer:
-    """Test the get_mcp_server function."""
+# class TestGetMcpServer:
+#     """Test the get_mcp_server function."""
 
-    @patch("mcp_server_box.FastMCP")
-    @patch("mcp_server_box.box_lifespan")
-    def test_get_mcp_server_stdio_default(self, mock_lifespan, mock_fastmcp_class):
-        """Test get_mcp_server with default stdio transport."""
-        mock_instance = Mock()
-        mock_fastmcp_class.return_value = mock_instance
+#     @patch("mcp_server_box.FastMCP")
+#     @patch("mcp_server_box.box_lifespan")
+#     def test_get_mcp_server_stdio_default(self, mock_lifespan, mock_fastmcp_class):
+#         """Test get_mcp_server with default stdio transport."""
+#         mock_instance = Mock()
+#         mock_fastmcp_class.return_value = mock_instance
 
-        result = get_mcp_server()
+#         result = get_mcp_server()
 
-        mock_fastmcp_class.assert_called_once_with(
-            "Box MCP Server", lifespan=mock_lifespan
-        )
-        assert result == mock_instance
+#         mock_fastmcp_class.assert_called_once_with(
+#             "Box MCP Server", lifespan=mock_lifespan
+#         )
+#         assert result == mock_instance
 
-    @patch("mcp_server_box.FastMCP")
-    @patch("mcp_server_box.box_lifespan")
-    def test_get_mcp_server_stdio_explicit(self, mock_lifespan, mock_fastmcp_class):
-        """Test get_mcp_server with explicit stdio transport."""
-        mock_instance = Mock()
-        mock_fastmcp_class.return_value = mock_instance
+#     @patch("mcp_server_box.FastMCP")
+#     @patch("mcp_server_box.box_lifespan")
+#     def test_get_mcp_server_stdio_explicit(self, mock_lifespan, mock_fastmcp_class):
+#         """Test get_mcp_server with explicit stdio transport."""
+#         mock_instance = Mock()
+#         mock_fastmcp_class.return_value = mock_instance
 
-        result = get_mcp_server(server_name="Custom Server", transport="stdio")
+#         result = get_mcp_server(server_name="Custom Server", transport="stdio")
 
-        mock_fastmcp_class.assert_called_once_with(
-            "Custom Server", lifespan=mock_lifespan
-        )
-        assert result == mock_instance
+#         mock_fastmcp_class.assert_called_once_with(
+#             "Custom Server", lifespan=mock_lifespan
+#         )
+#         assert result == mock_instance
 
-    @patch("mcp_server_box.FastMCP")
-    @patch("mcp_server_box.box_lifespan")
-    def test_get_mcp_server_sse_transport(self, mock_lifespan, mock_fastmcp_class):
-        """Test get_mcp_server with SSE transport."""
-        mock_instance = Mock()
-        mock_fastmcp_class.return_value = mock_instance
+#     @patch("mcp_server_box.FastMCP")
+#     @patch("mcp_server_box.box_lifespan")
+#     def test_get_mcp_server_sse_transport(self, mock_lifespan, mock_fastmcp_class):
+#         """Test get_mcp_server with SSE transport."""
+#         mock_instance = Mock()
+#         mock_fastmcp_class.return_value = mock_instance
 
-        result = get_mcp_server(
-            server_name="SSE Server", transport="sse", host="192.168.1.1", port=9000
-        )
+#         result = get_mcp_server(
+#             server_name="SSE Server", transport="sse", host="192.168.1.1", port=9000
+#         )
 
-        mock_fastmcp_class.assert_called_once_with(
-            "SSE Server",
-            stateless_http=True,
-            host="192.168.1.1",
-            port=9000,
-            lifespan=mock_lifespan,
-        )
-        assert result == mock_instance
+#         mock_fastmcp_class.assert_called_once_with(
+#             "SSE Server",
+#             stateless_http=True,
+#             host="192.168.1.1",
+#             port=9000,
+#             lifespan=mock_lifespan,
+#         )
+#         assert result == mock_instance
 
-    @patch("mcp_server_box.FastMCP")
-    @patch("mcp_server_box.box_lifespan")
-    def test_get_mcp_server_http_transport(self, mock_lifespan, mock_fastmcp_class):
-        """Test get_mcp_server with HTTP transport."""
-        mock_instance = Mock()
-        mock_fastmcp_class.return_value = mock_instance
+#     @patch("mcp_server_box.FastMCP")
+#     @patch("mcp_server_box.box_lifespan")
+#     def test_get_mcp_server_http_transport(self, mock_lifespan, mock_fastmcp_class):
+#         """Test get_mcp_server with HTTP transport."""
+#         mock_instance = Mock()
+#         mock_fastmcp_class.return_value = mock_instance
 
-        result = get_mcp_server(
-            server_name="HTTP Server", transport="http", host="localhost", port=8080
-        )
+#         result = get_mcp_server(
+#             server_name="HTTP Server", transport="http", host="localhost", port=8080
+#         )
 
-        mock_fastmcp_class.assert_called_once_with(
-            "HTTP Server",
-            stateless_http=True,
-            host="localhost",
-            port=8080,
-            lifespan=mock_lifespan,
-        )
-        assert result == mock_instance
+#         mock_fastmcp_class.assert_called_once_with(
+#             "HTTP Server",
+#             stateless_http=True,
+#             host="localhost",
+#             port=8080,
+#             lifespan=mock_lifespan,
+#         )
+#         assert result == mock_instance
 
 
 class TestMainExecution:

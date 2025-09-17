@@ -12,9 +12,13 @@ from box_tools_files import (
 async def test_box_read_tool(ctx):
     # HAB-1-01.docx = 1728677291168. This file must exists
     resp = await box_read_tool(ctx, "1728677291168")
+    content = resp.get("content", "")
+    error = resp.get("error", "")
+
     assert resp is not None
-    assert len(resp) > 0
-    assert "HAB-1-01" in resp
+    assert isinstance(resp, dict)
+    assert "HAB-1-01" in content
+    assert error == ""
 
 
 @pytest.mark.skip
