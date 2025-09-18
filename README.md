@@ -117,11 +117,32 @@ Find a user by their name.
   - `name` (str): The user's name.
 - **Returns:** User dictionary if found.
 
+
 #### `box_users_search_by_name_or_email_tool`
 Search for users by name or email.
 - **Parameters:**
   - `query` (str): Name or email to search for.
 - **Returns:** List of user dictionaries matching the query.
+
+### Box Group Tools
+
+#### `box_groups_search_tool`
+Search for groups by name (partial match).
+- **Parameters:**
+  - `query` (str): The search query to match against group names.
+- **Returns:** List of matching groups.
+
+#### `box_groups_list_members_tool`
+List all members of a specific group.
+- **Parameters:**
+  - `group_id` (str): The ID of the group whose members are to be listed.
+- **Returns:** List of group members.
+
+#### `box_groups_list_by_user_tool`
+List all groups that a specific user belongs to.
+- **Parameters:**
+  - `user_id` (str): The ID of the user whose groups are to be listed.
+- **Returns:** List of groups the user belongs to.
 
 ### Box File Tools
 
