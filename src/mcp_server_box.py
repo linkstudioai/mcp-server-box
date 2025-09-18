@@ -54,12 +54,20 @@ from box_tools_metadata import (
     box_metadata_update_instance_on_file_tool,
 )
 from box_tools_search import box_search_folder_by_name_tool, box_search_tool
+
 from box_tools_users import (
     box_users_list_tool,
     box_users_locate_by_email_tool,
     box_users_locate_by_name_tool,
     box_users_search_by_name_or_email_tool,
 )
+
+from box_tools_groups import (
+    box_groups_search_tool,
+    box_groups_list_members_tool,
+    box_groups_list_by_user_tool,
+)
+
 from server_context import box_lifespan_ccg, box_lifespan_oauth
 
 # Disable all logging
@@ -154,6 +162,11 @@ def register_tools(mcp: FastMCP):
     mcp.tool()(box_users_locate_by_name_tool)
     mcp.tool()(box_users_locate_by_email_tool)
     mcp.tool()(box_users_search_by_name_or_email_tool)
+
+    # Group Tools
+    mcp.tool()(box_groups_search_tool)
+    mcp.tool()(box_groups_list_members_tool)
+    mcp.tool()(box_groups_list_by_user_tool)
 
 
 if __name__ == "__main__":
