@@ -68,6 +68,19 @@ from box_tools_groups import (
     box_groups_list_by_user_tool,
 )
 
+from box_tools_collaboration import (
+    box_collaboration_list_by_file_tool,
+    box_collaboration_list_by_folder_tool,
+    box_collaboration_delete_tool,
+    box_collaboration_file_group_by_group_id_tool,
+    box_collaboration_file_user_by_user_id_tool,
+    box_collaboration_file_user_by_user_login_tool,
+    box_collaboration_folder_group_by_group_id_tool,
+    box_collaboration_folder_user_by_user_id_tool,
+    box_collaboration_folder_user_by_user_login_tool,
+)
+
+
 from server_context import box_lifespan_ccg, box_lifespan_oauth
 
 # Disable all logging
@@ -167,6 +180,17 @@ def register_tools(mcp: FastMCP):
     mcp.tool()(box_groups_search_tool)
     mcp.tool()(box_groups_list_members_tool)
     mcp.tool()(box_groups_list_by_user_tool)
+
+    # Collaboration Tools
+    mcp.tool()(box_collaboration_list_by_file_tool)
+    mcp.tool()(box_collaboration_list_by_folder_tool)
+    mcp.tool()(box_collaboration_delete_tool)
+    mcp.tool()(box_collaboration_file_user_by_user_id_tool)
+    mcp.tool()(box_collaboration_file_user_by_user_login_tool)
+    mcp.tool()(box_collaboration_folder_user_by_user_id_tool)
+    mcp.tool()(box_collaboration_folder_user_by_user_login_tool)
+    mcp.tool()(box_collaboration_file_group_by_group_id_tool)
+    mcp.tool()(box_collaboration_folder_group_by_group_id_tool)
 
 
 if __name__ == "__main__":
