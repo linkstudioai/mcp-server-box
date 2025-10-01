@@ -1,312 +1,84 @@
+"""Entry point for the Box MCP Server."""
+
 import argparse
 import logging
+import sys
 
-from fastapi import FastAPI
-from mcp.server.fastmcp import FastMCP
+from config import CONFIG, AuthType, TransportType
+from server import create_mcp_server, create_server_info_tool, register_tools
 
-# from box_tools_ai_deprecated import (
-#     box_ai_extract_tool,
-#     box_ask_ai_tool,
-#     box_ask_ai_tool_multi_file,
-#     box_hubs_ask_ai_tool,
-# )
-from box_tools_ai import (
-    box_ai_ask_file_multi_tool,
-    box_ai_ask_file_single_tool,
-    box_ai_ask_hub_tool,
-    box_ai_extract_freeform_tool,
-    box_ai_extract_structured_enhanced_using_fields_tool,
-    box_ai_extract_structured_enhanced_using_template_tool,
-    box_ai_extract_structured_using_fields_tool,
-    box_ai_extract_structured_using_template_tool,
-)
-from box_tools_docgen import (
-    box_docgen_create_batch_tool,
-    box_docgen_create_single_file_from_user_input_tool,
-    box_docgen_get_job_by_id_tool,
-    box_docgen_list_jobs_by_batch_tool,
-    box_docgen_list_jobs_tool,
-    box_docgen_template_create_tool,
-    box_docgen_template_get_by_id_tool,
-    box_docgen_template_get_by_name_tool,
-    box_docgen_template_list_jobs_tool,
-    # box_docgen_template_delete_tool, # very dangerous tool, use with caution
-    box_docgen_template_list_tags_tool,
-    box_docgen_template_list_tool,
-)
-from box_tools_files import (
-    box_download_file_tool,
-    box_read_tool,
-    box_upload_file_from_content_tool,
-    box_upload_file_from_path_tool,
-)
-from box_tools_folders import (
-    box_list_folder_content_by_folder_id,
-    box_manage_folder_tool,
-)
-from box_tools_generic import box_authorize_app_tool, box_who_am_i
-from box_tools_metadata import (
-    box_metadata_delete_instance_on_file_tool,
-    box_metadata_get_instance_on_file_tool,
-    box_metadata_set_instance_on_file_tool,
-    box_metadata_template_create_tool,
-    box_metadata_template_get_by_name_tool,
-    box_metadata_update_instance_on_file_tool,
-)
-from box_tools_search import box_search_folder_by_name_tool, box_search_tool
-
-from box_tools_users import (
-    box_users_list_tool,
-    box_users_locate_by_email_tool,
-    box_users_locate_by_name_tool,
-    box_users_search_by_name_or_email_tool,
-)
-
-from box_tools_groups import (
-    box_groups_search_tool,
-    box_groups_list_members_tool,
-    box_groups_list_by_user_tool,
-)
-
-from box_tools_collaboration import (
-    box_collaboration_list_by_file_tool,
-    box_collaboration_list_by_folder_tool,
-    box_collaboration_delete_tool,
-    box_collaboration_file_group_by_group_id_tool,
-    box_collaboration_file_user_by_user_id_tool,
-    box_collaboration_file_user_by_user_login_tool,
-    box_collaboration_folder_group_by_group_id_tool,
-    box_collaboration_folder_user_by_user_id_tool,
-    box_collaboration_folder_user_by_user_login_tool,
-    box_collaboration_update_tool,
-)
-
-from box_tools_web_link import (
-    box_web_link_create_tool,
-    box_web_link_get_by_id_tool,
-    box_web_link_update_by_id_tool,
-    box_web_link_delete_by_id_tool,
-)
-
-from box_tools_shared_links import (
-    box_shared_link_file_get_tool,
-    box_shared_link_file_create_or_update_tool,
-    box_shared_link_file_remove_tool,
-    box_shared_link_file_find_by_shared_link_url_tool,
-    box_shared_link_folder_get_tool,
-    box_shared_link_folder_create_or_update_tool,
-    box_shared_link_folder_remove_tool,
-    box_shared_link_folder_find_by_shared_link_url_tool,
-    box_shared_link_web_link_get_tool,
-    box_shared_link_web_link_create_or_update_tool,
-    box_shared_link_web_link_remove_tool,
-    box_shared_link_web_link_find_by_shared_link_url_tool,
-)
-
-
-from server_context import box_lifespan_ccg, box_lifespan_oauth
-
-# Disable all logging
-logging.basicConfig(level=logging.CRITICAL)
+# Logging configuration
+logging.basicConfig(level=logging.INFO)
 for logger_name in logging.root.manager.loggerDict:
-    logging.getLogger(logger_name).setLevel(logging.CRITICAL)
-
-# Override the logging call that's visible in the original code
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+    logging.getLogger(logger_name).setLevel(logging.INFO)
 
 
-def get_mcp_server(
-    server_name: str = "Box MCP Server",
-    transport: str = "stdio",
-    host: str = "127.0.0.1",
-    port: int = 8000,
-    auth: str = "oauth",
-) -> FastMCP:
-    # Initialize FastMCP server
-
-    if auth == "ccg":
-        lifespan = box_lifespan_ccg
-    else:
-        lifespan = box_lifespan_oauth
-
-    if transport == "stdio":
-        return FastMCP(server_name, lifespan=lifespan)
-    else:
-        return FastMCP(
-            server_name,
-            stateless_http=True,
-            host=host,
-            port=port,
-            lifespan=lifespan,
-        )
-
-
-def register_tools(mcp: FastMCP):
-    # Generic tools
-    mcp.tool()(box_who_am_i)
-    mcp.tool()(box_authorize_app_tool)
-
-    # Search Tools
-    mcp.tool()(box_search_tool)
-    mcp.tool()(box_search_folder_by_name_tool)
-
-    # AI Tools
-    mcp.tool()(box_ai_ask_file_single_tool)
-    mcp.tool()(box_ai_ask_file_multi_tool)
-    mcp.tool()(box_ai_ask_hub_tool)
-    mcp.tool()(box_ai_extract_freeform_tool)
-    mcp.tool()(box_ai_extract_structured_using_fields_tool)
-    mcp.tool()(box_ai_extract_structured_using_template_tool)
-    mcp.tool()(box_ai_extract_structured_enhanced_using_fields_tool)
-    mcp.tool()(box_ai_extract_structured_enhanced_using_template_tool)
-
-    # Document Generation Tools
-    mcp.tool()(box_docgen_create_batch_tool)
-    mcp.tool()(box_docgen_get_job_by_id_tool)
-    mcp.tool()(box_docgen_list_jobs_tool)
-    mcp.tool()(box_docgen_list_jobs_by_batch_tool)
-    mcp.tool()(box_docgen_template_create_tool)
-    mcp.tool()(box_docgen_template_list_tool)
-    # mcp.tool()(box_docgen_template_delete_tool) # very dangerous tool, use with caution
-    mcp.tool()(box_docgen_template_get_by_id_tool)
-    mcp.tool()(box_docgen_template_list_tags_tool)
-    mcp.tool()(box_docgen_template_list_jobs_tool)
-    mcp.tool()(box_docgen_template_get_by_name_tool)
-    mcp.tool()(box_docgen_create_single_file_from_user_input_tool)
-
-    # File Tools
-    mcp.tool()(box_read_tool)
-    mcp.tool()(box_upload_file_from_path_tool)
-    mcp.tool()(box_upload_file_from_content_tool)
-    mcp.tool()(box_download_file_tool)
-
-    # Folder Tools
-    mcp.tool()(box_list_folder_content_by_folder_id)
-    mcp.tool()(box_manage_folder_tool)
-
-    # Metadata Template Tools
-    mcp.tool()(box_metadata_template_get_by_name_tool)
-    mcp.tool()(box_metadata_set_instance_on_file_tool)
-    mcp.tool()(box_metadata_get_instance_on_file_tool)
-    mcp.tool()(box_metadata_delete_instance_on_file_tool)
-    mcp.tool()(box_metadata_update_instance_on_file_tool)
-    mcp.tool()(box_metadata_template_create_tool)
-
-    # User Tools
-    mcp.tool()(box_users_list_tool)
-    mcp.tool()(box_users_locate_by_name_tool)
-    mcp.tool()(box_users_locate_by_email_tool)
-    mcp.tool()(box_users_search_by_name_or_email_tool)
-
-    # Group Tools
-    mcp.tool()(box_groups_search_tool)
-    mcp.tool()(box_groups_list_members_tool)
-    mcp.tool()(box_groups_list_by_user_tool)
-
-    # Collaboration Tools
-    mcp.tool()(box_collaboration_list_by_file_tool)
-    mcp.tool()(box_collaboration_list_by_folder_tool)
-    mcp.tool()(box_collaboration_delete_tool)
-    mcp.tool()(box_collaboration_file_user_by_user_id_tool)
-    mcp.tool()(box_collaboration_file_user_by_user_login_tool)
-    mcp.tool()(box_collaboration_folder_user_by_user_id_tool)
-    mcp.tool()(box_collaboration_folder_user_by_user_login_tool)
-    mcp.tool()(box_collaboration_file_group_by_group_id_tool)
-    mcp.tool()(box_collaboration_folder_group_by_group_id_tool)
-    mcp.tool()(box_collaboration_update_tool)
-
-    # WebLink Tools
-    mcp.tool()(box_web_link_create_tool)
-    mcp.tool()(box_web_link_get_by_id_tool)
-    mcp.tool()(box_web_link_update_by_id_tool)
-    mcp.tool()(box_web_link_delete_by_id_tool)
-
-    # Shared Link Tools - Files
-    mcp.tool()(box_shared_link_file_get_tool)
-    mcp.tool()(box_shared_link_file_create_or_update_tool)
-    mcp.tool()(box_shared_link_file_remove_tool)
-    mcp.tool()(box_shared_link_file_find_by_shared_link_url_tool)
-
-    # Shared Link Tools - Folders
-    mcp.tool()(box_shared_link_folder_get_tool)
-    mcp.tool()(box_shared_link_folder_create_or_update_tool)
-    mcp.tool()(box_shared_link_folder_remove_tool)
-    mcp.tool()(box_shared_link_folder_find_by_shared_link_url_tool)
-
-    # Shared Link Tools - WebLinks
-    mcp.tool()(box_shared_link_web_link_get_tool)
-    mcp.tool()(box_shared_link_web_link_create_or_update_tool)
-    mcp.tool()(box_shared_link_web_link_remove_tool)
-    mcp.tool()(box_shared_link_web_link_find_by_shared_link_url_tool)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Box MCP Server")
+def parse_arguments() -> argparse.Namespace:
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description="Box Community MCP Server")
     parser.add_argument(
         "--transport",
-        choices=["stdio", "sse", "http"],
-        default="stdio",
-        help="Transport type (default: stdio)",
+        choices=[t.value for t in TransportType],
+        default=CONFIG.transport,
+        help=f"Transport type (default: {CONFIG.transport})",
     )
     parser.add_argument(
         "--host",
-        default="0.0.0.0",
-        help="Host for SSE/HTTP transport (default: 0.0.0.0)",
+        default=CONFIG.host,
+        help=f"Host for SSE/HTTP transport (default: {CONFIG.host})",
     )
     parser.add_argument(
         "--port",
         type=int,
-        default=8000,
-        help="Port for SSE/HTTP transport (default: 8000)",
+        default=CONFIG.port,
+        help=f"Port for SSE/HTTP transport (default: {CONFIG.port})",
+    )
+    parser.add_argument(
+        "--box-auth",
+        choices=[a.value for a in AuthType],
+        default=CONFIG.box_auth,
+        help=f"Authentication type for Box API (default: {CONFIG.box_auth})",
     )
 
     parser.add_argument(
-        "--auth",
-        choices=["oauth", "ccg"],
-        default="oauth",
-        help="Authentication type (default: oauth)",
+        "--no-mcp-server-auth",
+        action="store_true",
+        help="Disable authentication (for development only)",
     )
 
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    # Initialize FastMCP server
-    mcp = get_mcp_server(
-        server_name=f"Box MCP {args.transport.upper()} Server",
+
+def main() -> int:
+    """Main entry point for the Box MCP Server."""
+    args = parse_arguments()
+
+    # Create MCP server
+    server_name = f"{CONFIG.server_name_prefix} {args.transport.upper()} Server"
+    mcp = create_mcp_server(
+        server_name=server_name,
         transport=args.transport,
         host=args.host,
         port=args.port,
-        auth=args.auth,
+        box_auth=args.box_auth,
+        require_auth=not args.no_mcp_server_auth,
     )
+
+    # Register all tools
     register_tools(mcp)
 
-    @mcp.tool()
-    def mcp_server_info():
-        """Returns information about the MCP server."""
-        if args.transport == "stdio":
-            return {
-                "server_name": mcp.name,
-                "transport": args.transport,
-                "host": "N/A",
-                "port": "N/A",
-                "auth": args.auth,
-            }
+    # Register server info tool
+    create_server_info_tool(mcp, args.transport, args.box_auth, args.host, args.port)
 
-        return {
-            "server_name": mcp.name,
-            "transport": args.transport,
-            "host": args.host,
-            "port": args.port,
-            "auth": args.auth,
-        }
+    # Run server
+    try:
+        print(f"Starting {server_name} on {args.host}:{args.port}", file=sys.stderr)
+        mcp.run(transport=args.transport)
+        return 0
+    except Exception as e:
+        print(f"Error starting server: {e}", file=sys.stderr)
+        return 1
 
-    if args.transport == "sse":
-        # Create FastAPI app and mount MCP SSE endpoint
-        app = FastAPI()
-        app.mount("/", mcp.sse_app())
-        mcp.run(transport="sse")
 
-    elif args.transport == "http":
-        mcp.run(transport="streamable-http")
-    else:
-        mcp.run(transport="stdio")
+if __name__ == "__main__":
+    sys.exit(main())
