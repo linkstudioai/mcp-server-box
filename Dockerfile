@@ -20,6 +20,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     chown -R appuser:appgroup /app
 
 USER appuser
-# 8000: MCP server, this server is unable to generate OAuth tokens (no client_id/secret, no external callback). Pomerium has to do it.
+# 8000: OAuth
 EXPOSE 8000
-CMD ["uv", "run", "src/mcp_server_box.py", "--transport=streamable-http", "--box-auth=oauth", "--no-mcp-server-auth", "--host=0.0.0.0", "--port=8000"]
+# 8001: MCP server
+EXPOSE 8001
+CMD ["uv", "run", "src/mcp_server_box.py", "--transport=streamable-http", "--box-auth=oauth", "--no-mcp-server-auth", "--host=0.0.0.0", "--port=8001"]

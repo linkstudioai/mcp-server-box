@@ -28,7 +28,10 @@ spec:
         name: mcp-box-oauth
         ports:
         - containerPort: 8000
-          name: http
+          name: http8000
+          protocol: TCP
+        - containerPort: 8001
+          name: http8001
           protocol: TCP
         resources: {}
         terminationMessagePath: /dev/termination-log
@@ -51,9 +54,13 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - port: 80
-    targetPort: http
+  - port: 8000
+    targetPort: http8000
     protocol: TCP
-    name: http
+    name: http8000
+  - port: 8001
+    targetPort: http8001
+    protocol: TCP
+    name: http8001
   selector:
     app: mcp-box-oauth
