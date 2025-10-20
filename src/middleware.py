@@ -1,7 +1,10 @@
 """Authentication middleware for MCP server."""
 
+import json
 import logging
 import os
+import traceback
+from typing import Any, Dict
 
 from fastapi import Request, status
 from mcp.server.fastmcp import FastMCP
@@ -12,6 +15,93 @@ from starlette.routing import Route
 from config import AuthType, TransportType
 
 logger = logging.getLogger(__name__)
+
+
+def extract_box_error_details(exception: Exception) -> Dict[str, Any]:
+    """Extract detailed error information from Box SDK exceptions.
+    
+    Args:
+        exception: The exception caught from Box SDK
+        
+    Returns:
+        Dict containing detailed error information
+    """
+    error_details = {
+        "error_type": type(exception).__name__,
+        "error_message": str(exception),
+    }
+    
+    # Try to extract HTTP status code and response details
+    if hasattr(exception, 'status_code'):
+        error_details["status_code"] = exception.status_code
+    
+    if hasattr(exception, 'response'):
+        try:
+            if hasattr(exception.response, 'status_code'):
+                error_details["status_code"] = exception.response.status_code
+            if hasattr(exception.response, 'text'):
+                try:
+                    response_text = exception.response.text
+                    # Try to parse as JSON for structured error info
+                    if response_text:
+                        try:
+                            response_json = json.loads(response_text)
+                            error_details["response_body"] = response_json
+                        except json.JSONDecodeError:
+                            error_details["response_text"] = response_text
+                except Exception:
+                    pass
+        except Exception:
+            pass
+    
+    # Check for other common error attributes
+    for attr in ['code', 'reason', 'details', 'context']:
+        if hasattr(exception, attr):
+            try:
+                error_details[attr] = getattr(exception, attr)
+            except Exception:
+                pass
+    
+    return error_details
+
+
+class ErrorLoggingMiddleware(BaseHTTPMiddleware):
+    """Middleware to catch and log detailed error information from downstream handlers."""
+    
+    async def dispatch(self, request: Request, call_next):
+        """Catch and log detailed error information."""
+        try:
+            response = await call_next(request)
+            return response
+        except Exception as e:
+            # Extract detailed error information
+            error_details = extract_box_error_details(e)
+            
+            # Log the detailed error
+            print(f"❌ [ERROR] Box API call failed:")
+            print(f"   Request: {request.method} {request.url.path}")
+            print(f"   Error Type: {error_details.get('error_type', 'Unknown')}")
+            print(f"   Error Message: {error_details.get('error_message', 'No message')}")
+            
+            if 'status_code' in error_details:
+                print(f"   HTTP Status Code: {error_details['status_code']}")
+            
+            if 'response_body' in error_details:
+                print(f"   Response Body: {json.dumps(error_details['response_body'], indent=2)}")
+            elif 'response_text' in error_details:
+                print(f"   Response Text: {error_details['response_text']}")
+            
+            if 'code' in error_details:
+                print(f"   Error Code: {error_details['code']}")
+            
+            if 'reason' in error_details:
+                print(f"   Reason: {error_details['reason']}")
+            
+            # Log stack trace for debugging
+            logger.error(f"Detailed error traceback:\n{traceback.format_exc()}")
+            
+            # Re-raise the exception to be handled by the framework
+            raise
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -179,7 +269,9 @@ def add_auth_middleware(mcp: FastMCP, transport: str, box_auth: str) -> None:
 
             # Add OAuth discovery endpoint first (before middleware)
             add_oauth_discovery_endpoint(app, transport)
-            # Then add auth middleware
+            # Add error logging middleware
+            app.add_middleware(ErrorLoggingMiddleware)
+            # Then add auth middleware (auth should be outermost)
             app.add_middleware(middleware_class)
             logger.info(
                 f"Middleware added. App middleware count: {len(app.user_middleware)}"
@@ -200,8 +292,9 @@ def add_auth_middleware(mcp: FastMCP, transport: str, box_auth: str) -> None:
 
             # Add OAuth discovery endpoint first (before middleware)
             add_oauth_discovery_endpoint(app, transport)
-
-            # Then add auth middleware
+            # Add error logging middleware
+            app.add_middleware(ErrorLoggingMiddleware)
+            # Then add auth middleware (auth should be outermost)
             app.add_middleware(middleware_class)
             logger.info(
                 f"Middleware added. App middleware count: {len(app.user_middleware)}"

@@ -11,6 +11,7 @@ from box_ai_agents_toolkit import (
 )
 from mcp.server.fastmcp import Context
 
+from error_utils import format_box_error, log_box_error_details
 from tools.box_tools_generic import get_box_client
 
 
@@ -27,9 +28,14 @@ async def box_read_tool(ctx: Context, file_id: str) -> dict[str, Any]:
     if not isinstance(file_id, str):
         file_id = str(file_id)
 
-    box_client = get_box_client(ctx)
-    response = box_file_text_extract(box_client, file_id)
-    return response
+    try:
+        box_client = get_box_client(ctx)
+        response = box_file_text_extract(box_client, file_id)
+        return response
+    except Exception as e:
+        log_box_error_details(e, context="Reading file content", request_info=f"GET /files/{file_id}/content")
+        # Re-raise for middleware to handle
+        raise
 
 
 async def box_upload_file_from_path_tool(
@@ -84,7 +90,12 @@ async def box_upload_file_from_path_tool(
         result = box_upload_file(box_client, content, actual_file_name, folder_id)
         return f"File uploaded successfully. File ID: {result['id']}, Name: {result['name']}"
     except Exception as e:
-        return f"Error uploading file: {str(e)}"
+        # Enhanced error logging will be handled by middleware
+        # Still provide a user-friendly error message
+        error_msg = f"Error uploading file: {str(e)}"
+        if hasattr(e, 'status_code'):
+            error_msg += f" (HTTP {e.status_code})"
+        return error_msg
 
 
 async def box_upload_file_from_content_tool(
@@ -111,10 +122,15 @@ async def box_upload_file_from_content_tool(
             content = base64.b64decode(content)
 
         # Upload using toolkit
-        result = box_upload_file(box_client, content, file_name, folder_id)
+        result = box_upload_file(box_client, final_content, file_name, folder_id)
         return f"File uploaded successfully. File ID: {result['id']}, Name: {result['name']}"
     except Exception as e:
-        return f"Error uploading file: {str(e)}"
+        # Enhanced error logging will be handled by middleware
+        # Still provide a user-friendly error message
+        error_msg = f"Error uploading file: {str(e)}"
+        if hasattr(e, 'status_code'):
+            error_msg += f" (HTTP {e.status_code})"
+        return error_msg
 
 
 async def box_download_file_tool(

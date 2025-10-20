@@ -3,6 +3,7 @@ from typing import cast
 from box_ai_agents_toolkit import BoxClient, authorize_app
 from mcp.server.fastmcp import Context
 
+from error_utils import format_box_error, log_box_error_details
 from server_context import BoxContext, create_box_client_from_token
 
 
@@ -48,9 +49,13 @@ async def box_who_am_i(ctx: Context) -> dict:
     return:
         dict: The current user's information.
     """
-    box_client = get_box_client(ctx)
-    return box_client.users.get_user_me().to_dict()
-    # return f"Authenticated as: {current_user.name}"
+    try:
+        box_client = get_box_client(ctx)
+        return box_client.users.get_user_me().to_dict()
+    except Exception as e:
+        log_box_error_details(e, context="Getting current user information", request_info="GET /users/me")
+        # Re-raise for middleware to handle
+        raise
 
 
 async def box_authorize_app_tool() -> str:
@@ -61,8 +66,13 @@ async def box_authorize_app_tool() -> str:
     return:
         str: Message
     """
-    result = authorize_app()
-    if result:
-        return "Box application authorized successfully"
-    else:
-        return "Box application not authorized"
+    try:
+        result = authorize_app()
+        if result:
+            return "Box application authorized successfully"
+        else:
+            return "Box application not authorized"
+    except Exception as e:
+        log_box_error_details(e, context="Authorizing Box application")
+        error_msg = format_box_error(e, "authorization")
+        return error_msg
