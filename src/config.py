@@ -17,6 +17,7 @@ class AuthType(str, Enum):
 
     OAUTH = "oauth"
     CCG = "ccg"
+    DELEGATED = "delegated"  # Token provided by upstream proxy (e.g., Pomerium)
 
 
 @dataclass(frozen=True)

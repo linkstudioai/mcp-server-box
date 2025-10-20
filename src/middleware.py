@@ -9,7 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
-from config import TransportType
+from config import AuthType, TransportType
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +67,46 @@ class AuthMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+class DelegatedAuthMiddleware(BaseHTTPMiddleware):
+    """Middleware for delegated authentication mode (e.g., when behind Pomerium).
+    
+    In this mode, the Bearer token is the Box OAuth access token itself,
+    provided by an upstream proxy that has already handled the OAuth flow.
+    This middleware extracts the token and makes it available to request handlers.
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        """Extract Box access token from Authorization header."""
+        # Always allow OAuth discovery endpoint
+        if request.url.path == "/.well-known/oauth-protected-resource":
+            logger.info("Allowing OAuth discovery endpoint without authentication")
+            return await call_next(request)
+
+        auth_header = request.headers.get("authorization")
+        if not auth_header:
+            logger.warning("Missing authorization header in delegated auth mode")
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={"error": "Missing authorization header with Box token"},
+            )
+
+        if not auth_header.startswith("Bearer "):
+            logger.warning("Invalid authorization header format")
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={"error": "Invalid authorization header format"},
+            )
+
+        # Extract the Box access token
+        box_access_token = auth_header.replace("Bearer ", "")
+        
+        # Store it in request state for use by handlers
+        request.state.box_access_token = box_access_token
+        logger.info("Box access token extracted from Authorization header")
+        
+        return await call_next(request)
+
+
 def add_oauth_discovery_endpoint(app, transport: str) -> None:
     """Add OAuth discovery endpoint to the Starlette app."""
 
@@ -98,9 +138,23 @@ def add_oauth_discovery_endpoint(app, transport: str) -> None:
     logger.info("Added OAuth discovery endpoint")
 
 
-def add_auth_middleware(mcp: FastMCP, transport: str) -> None:
-    """Add authentication middleware by wrapping the app creation method."""
-    logger.info(f"Setting up auth middleware wrapper for transport: {transport}")
+def add_auth_middleware(mcp: FastMCP, transport: str, box_auth: str) -> None:
+    """Add authentication middleware by wrapping the app creation method.
+    
+    Args:
+        mcp: The FastMCP server instance
+        transport: The transport type (sse or streamable-http)
+        box_auth: The Box authentication mode (oauth, ccg, or delegated)
+    """
+    logger.info(f"Setting up auth middleware wrapper for transport: {transport}, box_auth: {box_auth}")
+    
+    # Select the appropriate middleware based on auth mode
+    if box_auth == AuthType.DELEGATED.value:
+        middleware_class = DelegatedAuthMiddleware
+        logger.info("Using DelegatedAuthMiddleware (token from upstream proxy)")
+    else:
+        middleware_class = AuthMiddleware
+        logger.info("Using standard AuthMiddleware (BOX_MCP_SERVER_AUTH_TOKEN)")
 
     if transport == TransportType.SSE.value:
         # Store the original method
@@ -115,7 +169,7 @@ def add_auth_middleware(mcp: FastMCP, transport: str) -> None:
             # Add OAuth discovery endpoint first (before middleware)
             add_oauth_discovery_endpoint(app, transport)
             # Then add auth middleware
-            app.add_middleware(AuthMiddleware)
+            app.add_middleware(middleware_class)
             logger.info(
                 f"Middleware added. App middleware count: {len(app.user_middleware)}"
             )
@@ -137,7 +191,7 @@ def add_auth_middleware(mcp: FastMCP, transport: str) -> None:
             add_oauth_discovery_endpoint(app, transport)
 
             # Then add auth middleware
-            app.add_middleware(AuthMiddleware)
+            app.add_middleware(middleware_class)
             logger.info(
                 f"Middleware added. App middleware count: {len(app.user_middleware)}"
             )

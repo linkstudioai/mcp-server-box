@@ -3,12 +3,30 @@ from dataclasses import dataclass
 from typing import AsyncIterator
 
 from box_ai_agents_toolkit import BoxClient, get_ccg_client, get_oauth_client
+from boxsdk import Client, OAuth2
 from mcp.server.fastmcp import FastMCP
 
 
 @dataclass
 class BoxContext:
     client: BoxClient | None = None
+
+
+def create_box_client_from_token(access_token: str) -> Client:
+    """Create a Box client using an access token from an upstream proxy.
+    
+    Args:
+        access_token: The Box OAuth access token provided by upstream proxy (e.g., Pomerium)
+    
+    Returns:
+        BoxClient: A Box client authenticated with the provided token
+    """
+    oauth = OAuth2(
+        client_id="",  # Not needed when using existing token
+        client_secret="",  # Not needed when using existing token
+        access_token=access_token,
+    )
+    return Client(oauth)
 
 
 @asynccontextmanager
@@ -28,6 +46,21 @@ async def box_lifespan_ccg(server: FastMCP) -> AsyncIterator[BoxContext]:
     try:
         client = get_ccg_client()
         yield BoxContext(client=client)
+    finally:
+        # Cleanup (if needed)
+        pass
+
+
+@asynccontextmanager
+async def box_lifespan_delegated(server: FastMCP) -> AsyncIterator[BoxContext]:
+    """Manage Box client lifecycle with delegated auth (token from upstream proxy).
+    
+    In this mode, no Box client is created at startup. Instead, clients are created
+    per-request using the access token provided by an upstream proxy like Pomerium.
+    """
+    try:
+        # No client created - will be created per-request from token
+        yield BoxContext(client=None)
     finally:
         # Cleanup (if needed)
         pass

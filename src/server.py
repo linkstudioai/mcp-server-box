@@ -5,9 +5,9 @@ from pathlib import Path
 import tomli
 from mcp.server.fastmcp import FastMCP
 
-from config import CONFIG, TransportType
+from config import CONFIG, AuthType, TransportType
 from middleware import add_auth_middleware
-from server_context import box_lifespan_ccg, box_lifespan_oauth
+from server_context import box_lifespan_ccg, box_lifespan_delegated, box_lifespan_oauth
 from tool_registry import register_all_tools
 from tool_registry.ai_tools import register_ai_tools
 from tool_registry.collaboration_tools import register_collaboration_tools
@@ -45,7 +45,12 @@ def create_mcp_server(
     """Create and configure the MCP server."""
 
     # Select appropriate lifespan based on auth type
-    lifespan = box_lifespan_ccg if box_auth == "ccg" else box_lifespan_oauth
+    if box_auth == AuthType.CCG.value:
+        lifespan = box_lifespan_ccg
+    elif box_auth == AuthType.DELEGATED.value:
+        lifespan = box_lifespan_delegated
+    else:
+        lifespan = box_lifespan_oauth
 
     # Create MCP server with appropriate transport
     if transport == TransportType.STDIO.value:
@@ -60,7 +65,7 @@ def create_mcp_server(
         )
         # Add authentication middleware for HTTP transports
         if require_auth:
-            add_auth_middleware(mcp, transport)
+            add_auth_middleware(mcp, transport, box_auth)
 
     return mcp
 

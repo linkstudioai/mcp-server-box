@@ -9,6 +9,7 @@ license = "MIT"
 authors = [{ name = "Box DevRel", email = "dx@box.com" }]
 dependencies = [
     "box-ai-agents-toolkit>=0.0.54",
+    "boxsdk>=3.0.0",
     "fastapi>=0.118.0",
     "mcp[cli]>=1.15.0",
     "python-dotenv>=1.1.1",

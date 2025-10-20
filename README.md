@@ -59,7 +59,14 @@ BOX_SUBJECT_ID = YOUR_USER_OR_ENTERPRISE_ID
 BOX_MCP_SERVER_AUTH_TOKEN = YOUR_BOX_MCP_SERVER_AUTH_TOKEN
 ```
 
-> Note: The `BOX_MCP_SERVER_AUTH_TOKEN` is the token used to authenticate requests to the Box MCP server. You can generate this token.
+#### Using Delegated Authentication (with Pomerium or similar proxy)
+When running behind an upstream proxy (like Pomerium) that handles Box OAuth:
+```
+# No Box credentials needed - the proxy handles OAuth
+# The proxy sends the Box access token as the Authorization Bearer token
+```
+
+> Note: The `BOX_MCP_SERVER_AUTH_TOKEN` is the token used to authenticate requests to the Box MCP server. You can generate this token. In delegated mode, this token is not used - the proxy sends the Box OAuth token directly.
 
 ### Run the MCP server in STDIO mode:
 ```sh
@@ -94,7 +101,7 @@ uv run src/mcp_server_box.py --help
 ```
 ```
 usage: mcp_server_box.py [-h] [--transport {stdio,sse,streamable-http}] [--host HOST]
-                         [--port PORT] [--box-auth {oauth,ccg}] [--no-mcp-server-auth]
+                         [--port PORT] [--box-auth {oauth,ccg,delegated}] [--no-mcp-server-auth]
 
 Box Community MCP Server
 
@@ -104,8 +111,11 @@ options:
                         Transport type (default: stdio)
   --host HOST           Host for SSE/HTTP transport (default: 0.0.0.0)
   --port PORT           Port for SSE/HTTP transport (default: 8000)
-  --box-auth {oauth,ccg}
+  --box-auth {oauth,ccg,delegated}
                         Authentication type for Box API (default: oauth)
+                        - oauth: Server handles OAuth flow on port 8000
+                        - ccg: Server uses Client Credentials Grant
+                        - delegated: Upstream proxy (e.g., Pomerium) handles OAuth
   --no-mcp-server-auth  Disable authentication (for development only)
   ```
 
@@ -163,3 +173,48 @@ Edit your Cursor configuration file and add the following under the `mcpServers`
         }
     }
 }
+```
+
+### Pomerium Configuration (Delegated Auth Mode)
+
+For production deployments with multiple users, you can use Pomerium to handle Box OAuth authentication:
+
+#### Start the MCP Server in Delegated Mode
+
+```sh
+uv run src/mcp_server_box.py \
+  --transport sse \
+  --host 127.0.0.1 \
+  --port 8001 \
+  --box-auth delegated
+```
+
+#### Configure Pomerium Route
+
+```yaml
+routes:
+  - from: https://box-mcp.your-domain.com
+    to: http://127.0.0.1:8001
+    name: Box MCP Server
+    mcp:
+      server:
+        upstream_oauth2:
+          client_id: YOUR_BOX_CLIENT_ID
+          client_secret: YOUR_BOX_CLIENT_SECRET
+          scopes: 
+            - root_readwrite  # Adjust based on your needs
+          endpoint:
+            auth_url: 'https://account.box.com/api/oauth2/authorize'
+            token_url: 'https://api.box.com/oauth2/token'
+    policy:
+      allow:
+        and:
+          - domain:
+              is: your-domain.com
+```
+
+**How it works:**
+1. Pomerium handles the Box OAuth flow for each user
+2. Pomerium sends the user's Box access token as `Authorization: Bearer <token>` to the MCP server
+3. The MCP server creates a Box client per-request using that token
+4. Each user operates on Box with their own credentials and permissions
