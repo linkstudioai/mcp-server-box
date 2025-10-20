@@ -24,4 +24,4 @@ USER appuser
 EXPOSE 8000
 # 8001: MCP server
 EXPOSE 8001
-CMD ["uv", "run", "src/mcp_server_box.py", "--transport=streamable-http", "--box-auth=oauth", "--no-mcp-server-auth", "--host=0.0.0.0", "--port=8001"]
+CMD ["uv", "run", "src/mcp_server_box.py", "--transport=streamable-http", "--box-auth=delegated", "--no-mcp-server-auth", "--host=0.0.0.0", "--port=8001"]

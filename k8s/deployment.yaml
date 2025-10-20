@@ -23,7 +23,7 @@ spec:
         app: mcp-box-oauth
     spec:
       containers:
-      - image: ghcr.io/linkstudioai/mcp-server-box:main
+      - image: ghcr.io/linkstudioai/mcp-server-box:use-client-token
         imagePullPolicy: Always
         name: mcp-box-oauth
         ports:
