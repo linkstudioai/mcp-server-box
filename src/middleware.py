@@ -77,12 +77,22 @@ class DelegatedAuthMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         """Extract Box access token from Authorization header."""
+        # Log incoming request details in delegated mode
+        print(f"🔄 [DELEGATED MODE] Received request: {request.method} {request.url.path}")
+        
         # Always allow OAuth discovery endpoint
         if request.url.path == "/.well-known/oauth-protected-resource":
             logger.info("Allowing OAuth discovery endpoint without authentication")
             return await call_next(request)
 
         auth_header = request.headers.get("authorization")
+        
+        # Print authorization header details
+        if auth_header:
+            print(f"🔑 [DELEGATED MODE] Authorization header: {auth_header}")
+        else:
+            print("❌ [DELEGATED MODE] No authorization header found")
+        
         if not auth_header:
             logger.warning("Missing authorization header in delegated auth mode")
             return JSONResponse(
@@ -103,6 +113,7 @@ class DelegatedAuthMiddleware(BaseHTTPMiddleware):
         # Store it in request state for use by handlers
         request.state.box_access_token = box_access_token
         logger.info("Box access token extracted from Authorization header")
+        print("✅ [DELEGATED MODE] Successfully extracted Box access token")
         
         return await call_next(request)
 
