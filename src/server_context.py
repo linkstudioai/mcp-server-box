@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import AsyncIterator
 
 from box_ai_agents_toolkit import BoxClient, get_ccg_client, get_oauth_client
-from boxsdk import Client, OAuth2
+from box_sdk_gen import BoxClient as BoxSDKClient, BoxDeveloperTokenAuth
 from mcp.server.fastmcp import FastMCP
 
 
@@ -12,7 +12,7 @@ class BoxContext:
     client: BoxClient | None = None
 
 
-def create_box_client_from_token(access_token: str) -> Client:
+def create_box_client_from_token(access_token: str) -> BoxClient:
     """Create a Box client using an access token from an upstream proxy.
     
     Args:
@@ -21,12 +21,10 @@ def create_box_client_from_token(access_token: str) -> Client:
     Returns:
         BoxClient: A Box client authenticated with the provided token
     """
-    oauth = OAuth2(
-        client_id="",  # Not needed when using existing token
-        client_secret="",  # Not needed when using existing token
-        access_token=access_token,
-    )
-    return Client(oauth)
+    auth = BoxDeveloperTokenAuth(token=access_token)
+    box_client = BoxSDKClient(auth=auth)
+    # Add extra header for tracking
+    return box_client.with_extra_headers(extra_headers={"x-box-ai-library": "mcp-server-box"})
 
 
 @asynccontextmanager
