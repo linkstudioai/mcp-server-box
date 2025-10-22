@@ -31,17 +31,34 @@ def get_box_client(ctx: Context) -> BoxClient:
         return lifespan_client
     
     # Delegated mode - create client from request token
+    print(f"🔍 [GET_BOX_CLIENT] Debug - ctx.request_context attributes: {dir(ctx.request_context)}")
+    print(f"🔍 [GET_BOX_CLIENT] Debug - Has 'request'? {hasattr(ctx.request_context, 'request')}")
+    print(f"🔍 [GET_BOX_CLIENT] Debug - Has 'session'? {hasattr(ctx.request_context, 'session')}")
+    
     # Try to get token from context variable (set by DelegatedAuthMiddleware)
     box_token = box_access_token_var.get()
     if box_token:
         print(f"✅ [GET_BOX_CLIENT] Retrieved token from context variable")
         return create_box_client_from_token(box_token)
     
-    # Fallback: try to get from request state (for compatibility)
-    if hasattr(ctx.request_context, 'request') and hasattr(ctx.request_context.request.state, 'box_access_token'):
-        box_token = ctx.request_context.request.state.box_access_token
-        print(f"✅ [GET_BOX_CLIENT] Retrieved token from request state")
-        return create_box_client_from_token(box_token)
+    # Try to get from request context's request object
+    if hasattr(ctx.request_context, 'request'):
+        request = ctx.request_context.request
+        print(f"🔍 [GET_BOX_CLIENT] Found request object, checking for token...")
+        
+        # Check request.state
+        if hasattr(request, 'state') and hasattr(request.state, 'box_access_token'):
+            box_token = request.state.box_access_token
+            print(f"✅ [GET_BOX_CLIENT] Retrieved token from request.state")
+            return create_box_client_from_token(box_token)
+        
+        # Check request headers directly
+        if hasattr(request, 'headers'):
+            auth_header = request.headers.get('authorization', '')
+            if auth_header.startswith('Bearer '):
+                box_token = auth_header.replace('Bearer ', '')
+                print(f"✅ [GET_BOX_CLIENT] Retrieved token directly from request headers")
+                return create_box_client_from_token(box_token)
     
     print("❌ [GET_BOX_CLIENT] No token found in context variable or request state")
     raise RuntimeError(
