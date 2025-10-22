@@ -4,6 +4,7 @@ from box_ai_agents_toolkit import BoxClient, authorize_app
 from mcp.server.fastmcp import Context
 
 from error_utils import format_box_error, log_box_error_details
+from middleware import box_access_token_var
 from server_context import BoxContext, create_box_client_from_token
 
 
@@ -30,11 +31,19 @@ def get_box_client(ctx: Context) -> BoxClient:
         return lifespan_client
     
     # Delegated mode - create client from request token
-    # The token is stored in request.state by DelegatedAuthMiddleware
-    if hasattr(ctx.request_context, 'request') and hasattr(ctx.request_context.request.state, 'box_access_token'):
-        box_token = ctx.request_context.request.state.box_access_token
+    # Try to get token from context variable (set by DelegatedAuthMiddleware)
+    box_token = box_access_token_var.get()
+    if box_token:
+        print(f"✅ [GET_BOX_CLIENT] Retrieved token from context variable")
         return create_box_client_from_token(box_token)
     
+    # Fallback: try to get from request state (for compatibility)
+    if hasattr(ctx.request_context, 'request') and hasattr(ctx.request_context.request.state, 'box_access_token'):
+        box_token = ctx.request_context.request.state.box_access_token
+        print(f"✅ [GET_BOX_CLIENT] Retrieved token from request state")
+        return create_box_client_from_token(box_token)
+    
+    print("❌ [GET_BOX_CLIENT] No token found in context variable or request state")
     raise RuntimeError(
         "Box client is not initialized. "
         "In delegated mode, ensure the Authorization Bearer token is provided."

@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import traceback
+from contextvars import ContextVar
 from typing import Any, Dict
 
 from fastapi import Request, status
@@ -15,6 +16,13 @@ from starlette.routing import Route
 from config import AuthType, TransportType
 
 logger = logging.getLogger(__name__)
+
+# Context variable to store Box access token across async calls
+# IMPORTANT: ContextVar provides automatic isolation per asyncio context/task.
+# Each HTTP request runs in its own context, so tokens are safely isolated
+# between concurrent requests from different users. This is critical for
+# multi-tenant security - User A's token will NEVER leak to User B's request.
+box_access_token_var: ContextVar[str | None] = ContextVar('box_access_token', default=None)
 
 
 def extract_box_error_details(exception: Exception) -> Dict[str, Any]:
@@ -179,7 +187,7 @@ class DelegatedAuthMiddleware(BaseHTTPMiddleware):
         
         # Print authorization header details
         if auth_header:
-            print(f"🔑 [DELEGATED MODE] Authorization header: {auth_header}")
+            print(f"🔑 [DELEGATED MODE] Authorization header: {auth_header[:50]}...")
         else:
             print("❌ [DELEGATED MODE] No authorization header found")
         
@@ -200,8 +208,10 @@ class DelegatedAuthMiddleware(BaseHTTPMiddleware):
         # Extract the Box access token
         box_access_token = auth_header.replace("Bearer ", "")
         
-        # Store it in request state for use by handlers
+        # Store it in both request state (for compatibility) and context variable
         request.state.box_access_token = box_access_token
+        box_access_token_var.set(box_access_token)
+        
         logger.info("Box access token extracted from Authorization header")
         print("✅ [DELEGATED MODE] Successfully extracted Box access token")
         
